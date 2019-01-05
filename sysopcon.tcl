@@ -23,6 +23,7 @@ snit::widget sysopcon {
 
     typemethod defaultViewDir {} {return [set ${type}::appDir]/view}
 
+    component myMenu
     component myTopHPane
     component myInputVPane
     component myOutputVPane
@@ -30,6 +31,9 @@ snit::widget sysopcon {
     component myInputEditor
 
     constructor args {
+
+        install myMenu using menu [winfo toplevel $win].menu
+        [winfo toplevel $win] configure -menu $myMenu
 
         install myTopHPane using ttk::panedwindow $win.toph -orient horizontal
         
@@ -46,6 +50,11 @@ snit::widget sysopcon {
     }
     
     method Redraw {} {
+
+        $myMenu delete 0 end
+        $myMenu add cascade -label File -menu [set m [menu $myMenu.m[incr M]]]
+        $m add separator
+        $m add command -label Quit -command [list exit]; #XXX confirm
 
         $myTopHPane add $myInputVPane
         $myTopHPane add $myOutputVPane
