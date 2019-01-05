@@ -3,12 +3,13 @@
 
 package require fileutil
 package require snit
+package require widget::scrolledwindow
 
 apply {{realScriptFn} {
     
     set appDir [file dirname $realScriptFn]
 
-    namespace eval ::sysadmin-notebook \
+    namespace eval ::sysopcon \
         [list ::variable appDir $appDir]
     
     source $appDir/libtcl/minhtmltk0/minhtmltk0.tcl
@@ -16,24 +17,29 @@ apply {{realScriptFn} {
 }} [fileutil::fullnormalize [info script]]
 
 
-snit::widget sysadmin-notebook {
+snit::widget sysopcon {
 
-    option -view default.html
     option -view-dir ""
 
     typemethod defaultViewDir {} {return [set ${type}::appDir]/view}
 
-    component myView -public view
+    component myTopHPane
+    component myInputVPane
+    component myOutputVPane
+
+    component myInputEditor
 
     constructor args {
 
-        install myView using minhtmltk $win.html
-
-        $self configurelist $args
+        install myTopHPane using ttk::panedwindow $win.toph -orient horizontal
         
-        if {$options(-view-dir) eq ""} {
-            set options(-view-dir) [$type defaultViewDir]
-        }
+        install myInputVPane using ttk::panedwindow $myTopHPane.inputv -orient vertical
+
+        $myInputVPane add [set sw [widget::scrolledwindow $myInputVPane.w[incr i]]]
+        install myInputEditor using text $sw.edit
+        $sw setwidget $myInputEditor
+
+        install myOutputVPane using ttk::panedwindow $myTopHPane.outputv -orient vertical
 
         $self Redraw
 
@@ -41,18 +47,16 @@ snit::widget sysadmin-notebook {
     
     method Redraw {} {
 
-        if {$options(-view) ne ""} {
-            $self open-view $options(-view-dir)/$options(-view)
-        }
+        $myTopHPane add $myInputVPane
+        $myTopHPane add $myOutputVPane
 
-        pack $myView -fill both -expand yes
+        pack $myTopHPane -fill both -expand yes
     }
 
     method open-view viewFn {
         
         $myView replace_location_html $viewFn \
             [$myView read_file $viewFn]
-
     }
 }
 
@@ -62,7 +66,7 @@ if {![info level] && [info script] eq $::argv0} {
 
         set opts [::minhtmltk::utils::parsePosixOpts ::argv]
 
-        pack [sysadmin-notebook .win {*}$opts] -fill both -expand yes
+        pack [sysopcon .win {*}$opts] -fill both -expand yes
         
         if {$::argv ne ""} {
             puts [.win {*}$::argv]
