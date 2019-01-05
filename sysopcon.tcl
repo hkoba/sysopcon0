@@ -108,11 +108,17 @@ snit::widget sysopcon {
         $m add command -label {Open Readline on TTY} \
             -command [list console show]
 
+        $myOutputView tag configure $ourOutputTag(result) \
+            -background #eee
+        $myOutputView tag configure $ourOutputTag(separator) \
+            -borderwidth 2 -relief sunken
+
+        $myOutputView tag raise sel
+
         pack $myTopHPane -fill both -expand yes
     }
 
     method Submit {{script ""}} {
-        puts "Submit is called"
         if {$script eq ""} {
             set script [$myInputEditor get 1.0 end-1c]
         }
@@ -127,9 +133,17 @@ snit::widget sysopcon {
         lappend myHistoryList $script
     }
 
+    typevariable ourOutputTag -array \
+        [apply {args {set ls []; foreach i $args {lappend ls $i $i}; set ls}} \
+             result separator]
+
     method {runner run} script {
         set result [{*}$myRunCommand $script]
-        $myOutputView insert end $result
+        $myOutputView insert end $result $ourOutputTag(result)
+        if {![regexp {\n$} $result]} {
+            $myOutputView insert end "\n"
+        }
+        $myOutputView insert end "\n" $ourOutputTag(separator)
     }
 
     method ssh host {
