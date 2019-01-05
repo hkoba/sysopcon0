@@ -27,6 +27,7 @@ apply {{realScriptFn} {
         [list ::variable appDir $appDir]
     
     source $appDir/libtcl/minhtmltk0/minhtmltk0.tcl
+    source $appDir/libtcl/sshcomm/sshcomm.tcl
 
 }} [fileutil::fullnormalize [info script]]
 
@@ -46,10 +47,15 @@ snit::widget sysopcon {
     
     component myOutputView
 
+    component myRunner
+    component myRunCommand
+
     constructor args {
         $self build-gui
 
         $self configurelist $args
+
+        $self interactive
 
         $self Redraw
     }
@@ -81,6 +87,16 @@ snit::widget sysopcon {
         $sw setwidget $myOutputView
     }
     
+    method interactive {} {
+        
+        bind [winfo toplevel $win] WM_DELETE_WINDOW [list after idle exit]
+
+        set ev <Control-Return>
+        bind $myInputEditor $ev ""
+        bind $myInputEditor $ev "$self Submit; break"
+
+    }
+
     method Redraw {} {
 
         $myMenu delete 0 end
@@ -93,6 +109,45 @@ snit::widget sysopcon {
             -command [list console show]
 
         pack $myTopHPane -fill both -expand yes
+    }
+
+    method Submit {{script ""}} {
+        puts "Submit is called"
+        if {$script eq ""} {
+            set script [$myInputEditor get 1.0 end-1c]
+        }
+        
+        $self history add $script
+        
+        $self runner run $script
+    }
+
+    variable myHistoryList
+    method {history add} script {
+        lappend myHistoryList $script
+    }
+
+    method {runner run} script {
+        set result [{*}$myRunCommand $script]
+        $myOutputView insert end $result
+    }
+
+    method ssh host {
+        if {$myRunner ne ""} {
+            error "Already connected!"
+        }
+        # コマンド行から ssh $host で起動した場合、
+        # ここでもう一度 event loop に戻らないと、exit 呼んでも終了しなくなる
+        # XXX: なぜ二回？
+        after idle [list $self connect $host]
+        return ""
+    }
+    method connect host {
+        set myRunner [sshcomm::connection $self.%AUTO% -host $host]
+        set cid [$myRunner comm new]
+        set myRunCommand [list apply {{cid script} {
+            comm::comm send $cid $script
+        }} $cid]
     }
 
     method open-view viewFn {
@@ -111,7 +166,8 @@ if {![info level] && [info script] eq $::argv0} {
         pack [sysopcon .win {*}$opts] -fill both -expand yes
         
         if {$::argv ne ""} {
-            puts [.win {*}$::argv]
+            # まずここで一回 event loop へ
+            after idle {puts [.win {*}$::argv]}
         }
     }}
 }
