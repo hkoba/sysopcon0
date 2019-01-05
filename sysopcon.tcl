@@ -60,16 +60,20 @@ snit::widget sysopcon {
 
         #----------------------------------------
         install myTopHPane using ttk::panedwindow $win.toph -orient horizontal
-        
-        install myInputVPane using ttk::panedwindow $myTopHPane.inputv -orient vertical
+
+        #----------------------------------------        
+        $myTopHPane add [set vf [ttk::labelframe $myTopHPane.input -text Input]]
+        install myInputVPane using ttk::panedwindow $vf.pane -orient vertical
+        pack $myInputVPane -fill both -expand yes
 
         $myInputVPane add [set sw [widget::scrolledwindow $myInputVPane.w[incr i]]]
         install myInputEditor using text $sw.edit
         $sw setwidget $myInputEditor
 
         #----------------------------------------
-
-        install myOutputVPane using ttk::panedwindow $myTopHPane.outputv -orient vertical
+        $myTopHPane add [set vf [ttk::labelframe $myTopHPane.output -text Output]]
+        install myOutputVPane using ttk::panedwindow $vf.pane -orient vertical
+        pack $myOutputVPane -fill both -expand yes
         
         $myOutputVPane add [set sw [widget::scrolledwindow $myOutputVPane.w[incr i]]]
 
@@ -87,9 +91,6 @@ snit::widget sysopcon {
         $myMenu add cascade -label Debug -menu [set m [menu $myMenu.m[incr M]]]
         $m add command -label {Open Readline on TTY} \
             -command [list console show]
-
-        $myTopHPane add $myInputVPane
-        $myTopHPane add $myOutputVPane
 
         pack $myTopHPane -fill both -expand yes
     }
