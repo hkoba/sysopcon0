@@ -28,6 +28,7 @@ apply {{realScriptFn} {
     
     source $appDir/libtcl/minhtmltk0/minhtmltk0.tcl
     source $appDir/libtcl/sshcomm/sshcomm.tcl
+    source $appDir/libtcl/rotext.tcl
 
 }} [fileutil::fullnormalize [info script]]
 
@@ -83,7 +84,7 @@ snit::widget sysopcon {
         
         $myOutputVPane add [set sw [widget::scrolledwindow $myOutputVPane.w[incr i]]]
 
-        install myOutputView using text $sw.output
+        install myOutputView using rotext $sw.output
         $sw setwidget $myOutputView
     }
     
