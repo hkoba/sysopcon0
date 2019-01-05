@@ -7,6 +7,20 @@ package require widget::scrolledwindow
 
 apply {{realScriptFn} {
     
+    if {[info commands ::console] eq ""} {
+        if {![catch {package require tclreadline}]} {
+            proc ::console method {
+                if {[info exists ::tclreadline::_in_loop]} return
+                set ::tclreadline::_in_loop 1
+                switch $method {
+                    show {
+                        after idle tclreadline::Loop
+                    }
+                }
+            }
+        }
+    }
+
     set appDir [file dirname $realScriptFn]
 
     namespace eval ::sysopcon \
@@ -59,6 +73,10 @@ snit::widget sysopcon {
         $myMenu add cascade -label File -menu [set m [menu $myMenu.m[incr M]]]
         $m add separator
         $m add command -label Quit -command [list exit]; #XXX confirm
+
+        $myMenu add cascade -label Debug -menu [set m [menu $myMenu.m[incr M]]]
+        $m add command -label {Open Readline on TTY} \
+            -command [list console show]
 
         $myTopHPane add $myInputVPane
         $myTopHPane add $myOutputVPane
