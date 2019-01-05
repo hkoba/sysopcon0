@@ -43,6 +43,8 @@ snit::widget sysopcon {
     component myOutputVPane
 
     component myInputEditor
+    
+    component myOutputView
 
     constructor args {
         $self build-gui
@@ -56,6 +58,7 @@ snit::widget sysopcon {
         install myMenu using menu [winfo toplevel $win].menu
         [winfo toplevel $win] configure -menu $myMenu
 
+        #----------------------------------------
         install myTopHPane using ttk::panedwindow $win.toph -orient horizontal
         
         install myInputVPane using ttk::panedwindow $myTopHPane.inputv -orient vertical
@@ -64,7 +67,14 @@ snit::widget sysopcon {
         install myInputEditor using text $sw.edit
         $sw setwidget $myInputEditor
 
+        #----------------------------------------
+
         install myOutputVPane using ttk::panedwindow $myTopHPane.outputv -orient vertical
+        
+        $myOutputVPane add [set sw [widget::scrolledwindow $myOutputVPane.w[incr i]]]
+
+        install myOutputView using text $sw.output
+        $sw setwidget $myOutputView
     }
     
     method Redraw {} {
