@@ -31,7 +31,14 @@ snit::widget sysopcon {
     component myInputEditor
 
     constructor args {
+        $self build-gui
 
+        $self configurelist $args
+
+        $self Redraw
+    }
+    
+    method build-gui {} {
         install myMenu using menu [winfo toplevel $win].menu
         [winfo toplevel $win] configure -menu $myMenu
 
@@ -44,9 +51,6 @@ snit::widget sysopcon {
         $sw setwidget $myInputEditor
 
         install myOutputVPane using ttk::panedwindow $myTopHPane.outputv -orient vertical
-
-        $self Redraw
-
     }
     
     method Redraw {} {
