@@ -5,6 +5,8 @@ package require fileutil
 package require snit
 package require widget::scrolledwindow
 
+# thread?
+
 apply {{realScriptFn} {
     
     if {[info commands ::console] eq ""} {
@@ -29,7 +31,7 @@ apply {{realScriptFn} {
     source $appDir/libtcl/minhtmltk0/minhtmltk0.tcl
     source $appDir/libtcl/sshcomm/sshcomm.tcl
     source $appDir/libtcl/rotext.tcl
-    source $appDir/libtcl/ctext_tcl.tcl
+    source $appDir/libtcl/cmdlistener.tcl
 
     source $appDir/libtcl/taskrunner-tcl/taskrunner.tcl
     # XXX: Not worked. ::sshcomm::register-plugin ::TaskRunner
@@ -48,7 +50,7 @@ snit::widget sysopcon {
     component myInputVPane
     component myOutputVPane
 
-    component myInputEditor
+    component myListener
     
     component myOutputView
 
@@ -77,17 +79,9 @@ snit::widget sysopcon {
         install myInputVPane using ttk::panedwindow $vf.pane -orient vertical
         pack $myInputVPane -fill both -expand yes
 
-        $myInputVPane add [set sw [widget::scrolledwindow $myInputVPane.w[incr i]]]
-        install myInputEditor using ctext_tcl $sw.edit -linemap 0 -undo yes -autoseparator yes
-        $sw setwidget $myInputEditor
-        # 今一…
-        bind Text <Key-space> {
-            tk::TextInsert %W %A
-            if {[%W cget -autoseparators]} {
-                %W edit separator
-            }
-        }
-
+        install myListener using cmdlistener $myInputVPane.listener \
+            -command [list $self runner run]
+        $myInputVPane add $myListener
 
         #----------------------------------------
         $myTopHPane add [set vf [ttk::labelframe $myTopHPane.output -text Output]]
@@ -103,10 +97,6 @@ snit::widget sysopcon {
     method interactive {} {
         
         bind [winfo toplevel $win] WM_DELETE_WINDOW [list after idle exit]
-
-        set ev <Control-Return>
-        bind $myInputEditor $ev ""
-        bind $myInputEditor $ev "$self Submit; break"
 
     }
 
@@ -130,21 +120,6 @@ snit::widget sysopcon {
         $myOutputView tag raise sel
 
         pack $myTopHPane -fill both -expand yes
-    }
-
-    method Submit {{script ""}} {
-        if {$script eq ""} {
-            set script [$myInputEditor get 1.0 end-1c]
-        }
-        
-        $self history add $script
-        
-        $self runner run $script
-    }
-
-    variable myHistoryList
-    method {history add} script {
-        lappend myHistoryList $script
     }
 
     typevariable ourOutputTag -array \
