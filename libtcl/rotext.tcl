@@ -11,7 +11,7 @@ snit::widgetadaptor rotext {
 
     constructor args {
         
-        installhull using text
+        installhull using text -undo no
         
         $self configurelist $args
 
