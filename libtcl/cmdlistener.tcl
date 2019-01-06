@@ -42,17 +42,17 @@ snit::widgetadaptor cmdlistener {
         $self configurelist $args
 
         #----------------------------------------
+        set sw [widget::scrolledwindow $win.sw[incr w]]
+        install myHistView using listbox $sw.histview -height 3
+        $sw setwidget $myHistView
+
+        #----------------------------------------
         $hull add [set sw [widget::scrolledwindow $win.sw[incr w]]]
         install myView using ctext_tcl $sw.ctext -linemap 0 -undo yes -autoseparator yes
         $sw setwidget $myView
         
         bindtags $myView.t [list $myView $myView.t $ourClass . all]
         bind $myView <Control-Return> "$self Submit; break"
-        
-        #----------------------------------------
-        $hull add [set sw [widget::scrolledwindow $win.sw[incr w]]]
-        install myHistView using listbox $sw.histview -height 6
-        $sw setwidget $myHistView
     }
     
     method Submit {} {
@@ -63,8 +63,12 @@ snit::widgetadaptor cmdlistener {
             puts [list submit $script]
         }
         $self history add command $script
-        $myHistView insert 0 "[clock format [clock seconds] -format {%H:%M:%S}] $script"
-        $myHistView see 0
+        if {![winfo ismapped $myHistView]} {
+            $hull insert 0 [winfo parent $myHistView]
+        }
+        $myHistView insert end "[clock format [clock seconds] -format {%H:%M:%S}] $script"
+        $myHistView see end
+        $myView delete 1.0 end
     }
 
     typeconstructor {
