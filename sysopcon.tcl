@@ -29,6 +29,7 @@ apply {{realScriptFn} {
     source $appDir/libtcl/minhtmltk0/minhtmltk0.tcl
     source $appDir/libtcl/sshcomm/sshcomm.tcl
     source $appDir/libtcl/rotext.tcl
+    source $appDir/libtcl/ctext_tcl.tcl
 
 }} [fileutil::fullnormalize [info script]]
 
@@ -62,7 +63,7 @@ snit::widget sysopcon {
     }
     
     method build-gui {} {
-        install myMenu using menu [winfo toplevel $win].menu
+        install myMenu using menu [winfo toplevel $win].menu -tearoff 0
         [winfo toplevel $win] configure -menu $myMenu
 
         #----------------------------------------
@@ -74,7 +75,7 @@ snit::widget sysopcon {
         pack $myInputVPane -fill both -expand yes
 
         $myInputVPane add [set sw [widget::scrolledwindow $myInputVPane.w[incr i]]]
-        install myInputEditor using text $sw.edit
+        install myInputEditor using ctext_tcl $sw.edit -linemap 0
         $sw setwidget $myInputEditor
 
         #----------------------------------------
@@ -139,6 +140,9 @@ snit::widget sysopcon {
              result separator]
 
     method {runner run} script {
+        if {$myRunCommand eq ""} {
+            error "Not yet connected!"
+        }
         set result [{*}$myRunCommand $script]
         $myOutputView insert end $result $ourOutputTag(result)
         if {![regexp {\n$} $result]} {
