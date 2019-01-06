@@ -33,7 +33,9 @@ apply {{realScriptFn} {
     source $appDir/libtcl/rotext.tcl
     source $appDir/libtcl/cmdlistener.tcl
 
-    source $appDir/libtcl/TclTask0/TclTaskRunner.tcl
+    source $appDir/libtcl/yatt_tcl/yatt_tcl.tcl
+
+    source $appDir/libtcl/TclTask/TclTaskRunner.tcl
     # XXX: Not worked. ::sshcomm::register-plugin ::TaskRunner
 
 }} [fileutil::fullnormalize [info script]]
