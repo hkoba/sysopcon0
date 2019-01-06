@@ -4,12 +4,12 @@
 package require ctext
 package require snit
 
-snit::widgetadaptor ctext-tcl {
+snit::widgetadaptor ctext_tcl {
     delegate method * to hull
     delegate option * to hull
 
     constructor args {
-        installhull using ctext -background \#eee
+        installhull using ctext
         $self install-highlight
         $self configurelist $args
     }
@@ -19,13 +19,13 @@ snit::widgetadaptor ctext-tcl {
         # https://core.tcl.tk/tklib/doc/trunk/embedded/www/tklib/files/modules/ctext/ctext.html#section6
         
 	ctext::addHighlightClass $win commands blue \
-            [list {*}$ourTclBuiltinList]
+            [list {*}$ctext_tcl::ourTclBuiltinList]
 
 	ctext::addHighlightClass $win typewords \#228b22 \
-            [list {*}$ourTclTypewordList]
+            [list {*}$ctext_tcl::ourTclTypewordList]
 
 	ctext::addHighlightClass $win keywords purple \
-            [list {*}$ourTclKeywordList ]
+            [list {*}$ctext_tcl::ourTclKeywordList ]
 
 	ctext::addHighlightClassWithOnlyCharStart $win vars \#a0522d "\$"
 	ctext::addHighlightClassForSpecialChars $win square_brackets green {[]}
@@ -33,8 +33,11 @@ snit::widgetadaptor ctext-tcl {
 	ctext::addHighlightClassForRegexp $win string red {".*"}
 
     }
+}
 
-    typevariable ourTclBuiltinList {
+namespace eval ctext_tcl {
+
+    ::variable ourTclBuiltinList {
         after
         append
         apply
@@ -164,7 +167,7 @@ snit::widgetadaptor ctext-tcl {
         yieldto
     }
 
-    typevariable ourTclTypewordList {
+    ::variable ourTclTypewordList {
 alias
 aliases
 anchor
@@ -424,7 +427,7 @@ y
 nil
     }
 
-    typevariable ourTclKeywordList {
+    ::variable ourTclKeywordList {
 require
 
 configure configurelist cget
@@ -481,12 +484,11 @@ WM_DELETE_WINDOW
 WM_TAKE_FOCUS
 WM_SAVE_YOURSELF
     }
-
 }
 
 if {![info level] && [info script] eq $::argv0} {
     apply {{} {
-        pack [ctext-tcl .win] -fill both -expand yes
+        pack [ctext_tcl .win] -fill both -expand yes
         if {$::argv ne ""} {
             set fh [open [lindex $::argv 0]]
             .win insert end [read $fh]
