@@ -43,8 +43,9 @@ snit::widgetadaptor cmdlistener {
 
         #----------------------------------------
         set sw [widget::scrolledwindow $win.sw[incr w]]
-        install myHistView using listbox $sw.histview -height 3
+        install myHistView using listbox $sw.histview -height 3 -background #eee
         $sw setwidget $myHistView
+        bind $myHistView <<ListboxSelect>> [list $self hist-insert active]
 
         #----------------------------------------
         $hull add [set sw [widget::scrolledwindow $win.sw[incr w]]]
@@ -53,8 +54,39 @@ snit::widgetadaptor cmdlistener {
         
         bindtags $myView.t [list $myView $myView.t $ourTextBindings . all]
         bind $myView <Control-Return> "$self Submit; break"
+        bind $myView <Control-p> "$self prev-or-openhist; break"
     }
     
+    method prev-or-openhist {} {
+        scan [$myView index insert] %d.%d line char
+        if {$line == 1} {
+            $self openhist end
+            $self hist-insert active
+        } else {
+            tk::TextSetCursor $myView.t [tk::TextUpDownLine $myView.t -1]
+        }
+    }
+
+    method hist-insert index {
+        set loggedScript [$myHistView get $index]
+        # XXX: modified なら…
+        $myView delete 1.0 end
+        $myView edit reset
+        $myView insert end [regsub {^[\d:]+ } $loggedScript {}]
+    }
+
+    method openhist {{index ""}} {
+        if {$index eq ""} {
+            if {![winfo ismapped $myHistView]} {
+                $hull insert 0 [winfo parent $myHistView]
+            }
+        } else {
+            focus $myHistView
+            $myHistView activate $index
+            $myHistView selection set $index
+        }
+    }
+
     method Submit {} {
         set script [$myView get 1.0 end-1c]
         if {$options(-command) ne ""} {
@@ -63,9 +95,7 @@ snit::widgetadaptor cmdlistener {
             puts [list submit $script]
         }
         $self history add command $script
-        if {![winfo ismapped $myHistView]} {
-            $hull insert 0 [winfo parent $myHistView]
-        }
+        $self openhist
         $myHistView insert end "[clock format [clock seconds] -format {%H:%M:%S}] $script"
         $myHistView see end
         $myView delete 1.0 end
