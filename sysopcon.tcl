@@ -78,8 +78,16 @@ snit::widget sysopcon {
         pack $myInputVPane -fill both -expand yes
 
         $myInputVPane add [set sw [widget::scrolledwindow $myInputVPane.w[incr i]]]
-        install myInputEditor using ctext_tcl $sw.edit -linemap 0
+        install myInputEditor using ctext_tcl $sw.edit -linemap 0 -undo yes -autoseparator yes
         $sw setwidget $myInputEditor
+        # 今一…
+        bind Text <Key-space> {
+            tk::TextInsert %W %A
+            if {[%W cget -autoseparators]} {
+                %W edit separator
+            }
+        }
+
 
         #----------------------------------------
         $myTopHPane add [set vf [ttk::labelframe $myTopHPane.output -text Output]]
