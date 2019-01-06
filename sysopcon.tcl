@@ -33,7 +33,7 @@ apply {{realScriptFn} {
     source $appDir/libtcl/rotext.tcl
     source $appDir/libtcl/cmdlistener.tcl
 
-    source $appDir/libtcl/taskrunner-tcl/taskrunner.tcl
+    source $appDir/libtcl/TclTask0/TclTaskRunner.tcl
     # XXX: Not worked. ::sshcomm::register-plugin ::TaskRunner
 
 }} [fileutil::fullnormalize [info script]]
@@ -150,7 +150,7 @@ snit::widget sysopcon {
     }
     method connect host {
         set myRunner [sshcomm::connection $self.%AUTO% -host $host \
-                          -plugins [list ::TaskRunner]]
+                          -plugins [list ::TclTaskRunner]]
         set cid [$myRunner comm new]
         set myRunCommand [list apply {{cid script} {
             comm::comm send $cid $script
