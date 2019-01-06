@@ -7,3 +7,6 @@
 [submodule "libtcl/yatt_tcl"]
 	path = libtcl/yatt_tcl
 	url = ../yatt_tcl0.git
+[submodule "libtcl/TclTask"]
+	path = libtcl/TclTask
+	url = ../TclTask0
