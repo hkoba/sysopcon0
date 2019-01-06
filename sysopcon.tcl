@@ -131,6 +131,7 @@ snit::widget sysopcon {
             error "Not yet connected!"
         }
         set result [{*}$myRunCommand $script]
+        $myOutputView see end
         $myOutputView insert end $result $ourOutputTag(result)
         if {![regexp {\n$} $result]} {
             $myOutputView insert end "\n"
