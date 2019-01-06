@@ -30,7 +30,7 @@ snit::widgetadaptor cmdlistener {
     component myStore -public history
     component myHistView
 
-    typevariable ourClass CmdListner
+    typevariable ourTextBindings CmdListner
 
     constructor args {
         installhull using ttk::panedwindow -orient vertical
@@ -51,7 +51,7 @@ snit::widgetadaptor cmdlistener {
         install myView using ctext_tcl $sw.ctext -linemap 0 -undo yes -autoseparator yes
         $sw setwidget $myView
         
-        bindtags $myView.t [list $myView $myView.t $ourClass . all]
+        bindtags $myView.t [list $myView $myView.t $ourTextBindings . all]
         bind $myView <Control-Return> "$self Submit; break"
     }
     
@@ -73,10 +73,10 @@ snit::widgetadaptor cmdlistener {
 
     typeconstructor {
         foreach ev [bind Text] {
-            bind $ourClass $ev [bind Text $ev]
+            bind $ourTextBindings $ev [bind Text $ev]
         }
 
-        bind $ourClass <Key-space> {
+        bind $ourTextBindings <Key-space> {
             tk::TextInsert %W %A
             if {[%W cget -autoseparators]} {
                 %W edit separator
