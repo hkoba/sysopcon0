@@ -17,42 +17,54 @@ namespace eval cmdlistener {
     }
 }
 
-snit::widget cmdlistener {
+snit::widgetadaptor cmdlistener {
+    delegate method * to hull
+    delegate option * to hull
+
     option -command ""
 
     option -store-type sqlite
     option -store-options ""
     
-    component myView
-
+    component myView -public text
     component myStore -public history
+    component myHistView
 
     typevariable ourClass CmdListner
 
     constructor args {
+        installhull using ttk::panedwindow -orient vertical
+
         set storeType [from args -store-type sqlite]
         install myStore using cmdlistener::store-$storeType $self.store \
             {*}[from args -store-options ""]
         
         $self configurelist $args
 
-        pack [set sw [widget::scrolledwindow $win.sw]] -fill both -expand yes
+        #----------------------------------------
+        $hull add [set sw [widget::scrolledwindow $win.sw[incr w]]]
         install myView using ctext_tcl $sw.ctext -linemap 0 -undo yes -autoseparator yes
         $sw setwidget $myView
         
         bindtags $myView.t [list $myView $myView.t $ourClass . all]
-
         bind $myView <Control-Return> "$self Submit; break"
+        
+        #----------------------------------------
+        $hull add [set sw [widget::scrolledwindow $win.sw[incr w]]]
+        install myHistView using listbox $sw.histview -height 6
+        $sw setwidget $myHistView
     }
     
     method Submit {} {
         set script [$myView get 1.0 end-1c]
-        $self history add command $script
         if {$options(-command) ne ""} {
             {*}$options(-command) $script
         } else {
             puts [list submit $script]
         }
+        $self history add command $script
+        $myHistView insert 0 "[clock format [clock seconds] -format {%H:%M:%S}] $script"
+        $myHistView see 0
     }
 
     typeconstructor {
