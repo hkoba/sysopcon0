@@ -1,6 +1,6 @@
 [submodule "libtcl/minhtmltk0"]
 	path = libtcl/minhtmltk0
-	url = git@github.com:hkoba/minhtmltk0.git
+	url = ../minhtmltk0.git
 [submodule "libtcl/sshcomm"]
 	path = libtcl/sshcomm
-	url = git@github.com:hkoba/sshcomm.git
+	url = ../sshcomm.git
