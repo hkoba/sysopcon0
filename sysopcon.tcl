@@ -105,9 +105,10 @@ snit::widget sysopcon {
     method Redraw {} {
 
         $myMenu delete 0 end
-        $myMenu add cascade -label File -menu [set m [menu $myMenu.m[incr M]]]
+        ::tk::AmpMenuArgs $myMenu add cascade -label &File -menu [set m [menu $myMenu.m[incr M] -tearoff 0]] 
+        
         $m add separator
-        $m add command -label Quit -command [list exit]; #XXX confirm
+        ::tk::AmpMenuArgs $m add command -label &Quit -command [list exit]; #XXX confirm
 
         $myMenu add cascade -label Debug -menu [set m [menu $myMenu.m[incr M]]]
         $m add command -label {Open Readline on TTY} \
