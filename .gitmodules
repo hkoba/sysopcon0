@@ -4,3 +4,6 @@
 [submodule "libtcl/sshcomm"]
 	path = libtcl/sshcomm
 	url = ../sshcomm.git
+[submodule "libtcl/yatt_tcl"]
+	path = libtcl/yatt_tcl
+	url = ../yatt_tcl0.git
