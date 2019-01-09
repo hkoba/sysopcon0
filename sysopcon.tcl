@@ -49,8 +49,11 @@ snit::widget sysopcon {
 
     component myMenu
     component myTopHPane
+    component myDocVPane
     component myInputVPane
     component myOutputVPane
+
+    component myDocView
 
     component myListener
     
@@ -76,7 +79,15 @@ snit::widget sysopcon {
         #----------------------------------------
         install myTopHPane using ttk::panedwindow $win.toph -orient horizontal
 
-        #----------------------------------------        
+        #----------------------------------------
+        install myDocVPane using ttk::panedwindow $myTopHPane.doc -orient vertical
+        $myTopHPane add $myDocVPane
+
+        install myDocView using minhtmltk $myDocVPane.html \
+            -width 400
+        $myDocVPane add $myDocView
+
+        #----------------------------------------
         $myTopHPane add [set vf [ttk::labelframe $myTopHPane.input -text Input]]
         install myInputVPane using ttk::panedwindow $vf.pane -orient vertical
         pack $myInputVPane -fill both -expand yes
@@ -113,6 +124,11 @@ snit::widget sysopcon {
         $myMenu add cascade -label Debug -menu [set m [menu $myMenu.m[incr M]]]
         $m add command -label {Open Readline on TTY} \
             -command [list console show]
+
+        #----------------------------------------
+        $self open-view default.html
+
+        #----------------------------------------
 
         $myOutputView tag configure $ourOutputTag(result) \
             -background #eee
@@ -161,9 +177,9 @@ snit::widget sysopcon {
     }
 
     method open-view viewFn {
-        
-        $myView replace_location_html $viewFn \
-            [$myView read_file $viewFn]
+        set fn [set ${type}::appDir]/view/$viewFn
+        $myDocView replace_location_html $viewFn \
+            [$myDocView read_file $fn]
     }
 }
 
