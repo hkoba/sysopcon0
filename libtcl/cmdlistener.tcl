@@ -31,6 +31,7 @@ snit::widgetadaptor cmdlistener {
 
     component myListener -public text
     variable myListenerStatus ""
+    component myMinibuffer -public entry
     component myStore -public history
     component myResultView
 
@@ -50,13 +51,22 @@ snit::widgetadaptor cmdlistener {
         set myHistIdx [$myStore histno max]
 
         #----------------------------------------
+        # Listener
         $hull add [set lf [ttk::labelframe $win.v[incr i] -text Input]]
         pack [set sw [widget::scrolledwindow $lf.sw]] -fill both -expand yes
         install myListener using ctext_tcl $sw.ctext -linemap 0 -undo yes -autoseparator yes -height 3
         $sw setwidget $myListener
+
+        #----------------------------------------
+        # Status bar and Minibuffer
         pack [set status [ttk::frame $lf.status]] -fill x -expand no
-        pack [ttk::label $status.label -textvariable [myvar myListenerStatus]] -fill x -expand yes -side left
+        pack [ttk::label $status.label -textvariable [myvar myListenerStatus]] -fill none -expand no -side left
+        install myMinibuffer using ttk::entry $status.entry -width 0
+        pack $myMinibuffer -fill x -expand yes -side left
+
         pack [ttk::label [set w $status.l[incr i]] -text "#"] -fill none -expand no -side left
+
+
         pack [ttk::label $status.l[incr i] -textvariable [myvar myHistIdx]] -fill none -expand no -side left
         $status configure -height [winfo reqheight $w]
 
@@ -80,6 +90,18 @@ snit::widgetadaptor cmdlistener {
         bind $myListener <Alt-p> "$self history up; break"
         bind $myListener <Alt-n> "$self history down; break"
 
+        # Start reverse incremental search
+        bind $myListener <Control-r> "$self minibuffer open-for search-back; break"
+
+        # Keybind for backward search mode minibuffer
+        bind search-back#$myMinibuffer-then <Key> \
+            [list $self search back]
+        bind search-back#$myMinibuffer-then <Control-r> \
+            [list $self search back]
+        # bind search-back#$myMinibuffer-then <Control-s> \
+        #     [list $self search forward]
+        bind search-back#$myMinibuffer-then <Key-Escape> \
+            [list $self minibuffer normal]
     }
 
     method up-line-or-history {} {
@@ -135,6 +157,34 @@ snit::widgetadaptor cmdlistener {
         $myResultView insert end $result result
     }
 
+    method {search back} {} {
+        if {[set found [$myStore search back *[$myMinibuffer get]* $myHistIdx]] eq ""} {
+            set myListenerStatus "failing $myMinibufferMode: "
+        } else {
+            $self history replace-by $found 0 end
+        }
+    }
+
+    variable myMinibufferMode ""
+    method {minibuffer normal} {} {
+        set myMinibufferMode ""
+        set myListenerStatus ""
+        $myMinibuffer delete 0 end
+        bindtags $myMinibuffer [list $myMinibuffer [winfo class $myMinibuffer] \
+                                    . all]
+        focus $myListener.t
+    }
+
+    method {minibuffer open-for} {mode} {
+        set myMinibufferMode $mode
+        set myListenerStatus "$mode: "
+        focus $myMinibuffer
+        bindtags $myMinibuffer [list $mode#$myMinibuffer \
+                                    $myMinibuffer [winfo class $myMinibuffer] \
+                                    $mode#$myMinibuffer-then\
+                                    . all]
+    }
+
     typeconstructor {
         foreach ev [bind Text] {
             bind $ourTextBindings $ev [bind Text $ev]
@@ -170,6 +220,15 @@ snit::type cmdlistener::store-sqlite {
         }
         $self DB last_insert_rowid
     }
+    method {search back} {text from} {
+        $self DB onecolumn {
+            select hist_id from history where script glob $text
+            and hist_id <= $from
+            order by hist_id desc
+            limit 1
+        }
+    }
+
     method {histno max} {} {
         $self DB eval {select max(rowid) from history}
     }
