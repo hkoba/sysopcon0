@@ -26,7 +26,7 @@ snit::widgetadaptor cmdlistener {
     option -store-type sqlite
     option -store-options ""
     
-    component myView -public text
+    component myListener -public text
     component myStore -public history
     component myHistView
 
@@ -49,30 +49,30 @@ snit::widgetadaptor cmdlistener {
 
         #----------------------------------------
         $hull add [set sw [widget::scrolledwindow $win.sw[incr w]]]
-        install myView using ctext_tcl $sw.ctext -linemap 0 -undo yes -autoseparator yes
-        $sw setwidget $myView
+        install myListener using ctext_tcl $sw.ctext -linemap 0 -undo yes -autoseparator yes
+        $sw setwidget $myListener
         
-        bindtags $myView.t [list $myView $myView.t $ourTextBindings . all]
-        bind $myView <Control-Return> "$self Submit; break"
-        bind $myView <Control-p> "$self prev-or-openhist; break"
+        bindtags $myListener.t [list $myListener $myListener.t $ourTextBindings . all]
+        bind $myListener <Control-Return> "$self Submit; break"
+        bind $myListener <Control-p> "$self prev-or-openhist; break"
     }
     
     method prev-or-openhist {} {
-        scan [$myView index insert] %d.%d line char
+        scan [$myListener index insert] %d.%d line char
         if {$line == 1} {
             $self openhist end
             $self hist-insert active
         } else {
-            tk::TextSetCursor $myView.t [tk::TextUpDownLine $myView.t -1]
+            tk::TextSetCursor $myListener.t [tk::TextUpDownLine $myListener.t -1]
         }
     }
 
     method hist-insert index {
         set loggedScript [$myHistView get $index]
         # XXX: modified なら…
-        $myView delete 1.0 end
-        $myView edit reset
-        $myView insert end [regsub {^[\d:]+ } $loggedScript {}]
+        $myListener delete 1.0 end
+        $myListener edit reset
+        $myListener insert end [regsub {^[\d:]+ } $loggedScript {}]
     }
 
     method openhist {{index ""}} {
@@ -88,7 +88,7 @@ snit::widgetadaptor cmdlistener {
     }
 
     method Submit {} {
-        set script [$myView get 1.0 end-1c]
+        set script [$myListener get 1.0 end-1c]
         if {$options(-command) ne ""} {
             {*}$options(-command) $script
         } else {
@@ -98,7 +98,7 @@ snit::widgetadaptor cmdlistener {
         $self openhist
         $myHistView insert end "[clock format [clock seconds] -format {%H:%M:%S}] $script"
         $myHistView see end
-        $myView delete 1.0 end
+        $myListener delete 1.0 end
     }
 
     typeconstructor {
