@@ -60,6 +60,19 @@ snit::widgetadaptor cmdlistener {
         pack [ttk::label $status.l[incr i] -textvariable [myvar myHistIdx]] -fill none -expand no -side left
         $status configure -height [winfo reqheight $w]
 
+        #----------------------------------------
+        # ResultView
+        $hull add [set lf [ttk::labelframe $win.v[incr i] -text Result]]
+        pack [set sw [widget::scrolledwindow $lf.sw]] -fill both -expand yes
+        install myResultView using rotext $sw.result -height 10
+        $sw setwidget $myResultView
+        $myResultView tag configure separator -borderwidth 2 -relief sunken
+
+        #----------------------------------------
+        $self setup keybind
+    }
+
+    method {setup keybind} {} {
         bindtags $myListener.t [list $myListener $myListener.t $ourTextBindings . all]
         bind $myListener <Control-Return> "$self Submit; break"
         bind $myListener <Control-p> "$self up-line-or-history; break"
@@ -67,13 +80,6 @@ snit::widgetadaptor cmdlistener {
         bind $myListener <Alt-p> "$self history up; break"
         bind $myListener <Alt-n> "$self history down; break"
 
-        #----------------------------------------
-        # default result log
-        $hull add [set lf [ttk::labelframe $win.v[incr i] -text Result]]
-        pack [set sw [widget::scrolledwindow $lf.sw]] -fill both -expand yes
-        install myResultView using rotext $sw.result -height 10
-        $sw setwidget $myResultView
-        $myResultView tag configure separator -borderwidth 2 -relief sunken
     }
 
     method up-line-or-history {} {
