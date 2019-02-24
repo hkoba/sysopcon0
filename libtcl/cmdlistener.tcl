@@ -64,6 +64,8 @@ snit::widgetadaptor cmdlistener {
         bind $myListener <Control-Return> "$self Submit; break"
         bind $myListener <Control-p> "$self up-line-or-history; break"
         bind $myListener <Control-n> "$self down-line-or-history; break"
+        bind $myListener <Alt-p> "$self history up; break"
+        bind $myListener <Alt-n> "$self history down; break"
 
         #----------------------------------------
         # default result log
@@ -76,7 +78,7 @@ snit::widgetadaptor cmdlistener {
 
     method up-line-or-history {} {
         if {[$myListener compare "insert linestart" == 1.0]} {
-            $self history replace-by $myHistIdx -1 end
+            $self history up
         } else {
             tk::TextSetCursor $myListener.t [tk::TextUpDownLine $myListener.t -1]
         }
@@ -84,10 +86,17 @@ snit::widgetadaptor cmdlistener {
 
     method down-line-or-history {} {
         if {[$myListener compare insert == end-1c]} {
-            $self history replace-by $myHistIdx +1 "1.0 lineend"
+            $self history down
         } else {
             tk::TextSetCursor $myListener.t [tk::TextUpDownLine $myListener.t 1]
         }
+    }
+
+    method {history up} {} {
+        $self history replace-by $myHistIdx -1 end
+    }
+    method {history down} {} {
+        $self history replace-by $myHistIdx +1 "1.0 lineend"
     }
 
     method {history replace-by} {histIx offset cursorIx} {
