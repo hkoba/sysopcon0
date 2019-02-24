@@ -8,26 +8,14 @@ package require widget::scrolledwindow
 # thread?
 
 apply {{realScriptFn} {
-    
-    if {[info commands ::console] eq ""} {
-        if {![catch {package require tclreadline}]} {
-            proc ::console method {
-                if {[info exists ::tclreadline::_in_loop]} return
-                set ::tclreadline::_in_loop 1
-                switch $method {
-                    show {
-                        after idle tclreadline::Loop
-                    }
-                }
-            }
-        }
-    }
 
     set appDir [file dirname $realScriptFn]
 
     namespace eval ::sysopcon \
         [list ::variable appDir $appDir]
-    
+
+    source $appDir/libtcl/console_tclrl.tcl
+
     source $appDir/libtcl/minhtmltk0/minhtmltk0.tcl
     source $appDir/libtcl/sshcomm/sshcomm.tcl
     source $appDir/libtcl/rotext.tcl
@@ -133,7 +121,7 @@ snit::widget sysopcon {
         $myOutputView tag configure $ourOutputTag(result) \
             -background #eee
         $myOutputView tag configure $ourOutputTag(separator) \
-            -borderwidth 2 -relief sunken
+            -borderwidth 2 -relief sunken -font {fixed 4}
 
         $myOutputView tag raise sel
 
