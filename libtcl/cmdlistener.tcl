@@ -6,6 +6,7 @@ package require sqlite3
 package require widget::scrolledwindow
 
 source [file dirname [info script]]/ctext_tcl.tcl
+source [file dirname [info script]]/rotext.tcl
 
 namespace eval cmdlistener {
     proc string-or {str args} {
@@ -25,12 +26,17 @@ snit::widgetadaptor cmdlistener {
 
     option -store-type sqlite
     option -store-options ""
-    
+
+    variable myHistIdx ""
+
     component myListener -public text
+    variable myListenerStatus ""
     component myStore -public history
-    component myHistView
+    component myResultView
 
     typevariable ourTextBindings CmdListner
+
+    typevariable ourHistKind -array [list command command]
 
     constructor args {
         installhull using ttk::panedwindow -orient vertical
@@ -38,67 +44,80 @@ snit::widgetadaptor cmdlistener {
         set storeType [from args -store-type sqlite]
         install myStore using cmdlistener::store-$storeType $self.store \
             {*}[from args -store-options ""]
-        
+
         $self configurelist $args
 
-        #----------------------------------------
-        set sw [widget::scrolledwindow $win.sw[incr w]]
-        install myHistView using listbox $sw.histview -height 3 -background #eee
-        $sw setwidget $myHistView
-        bind $myHistView <<ListboxSelect>> [list $self hist-insert active]
+        set myHistIdx [$myStore histno max]
 
         #----------------------------------------
-        $hull add [set sw [widget::scrolledwindow $win.sw[incr w]]]
-        install myListener using ctext_tcl $sw.ctext -linemap 0 -undo yes -autoseparator yes
+        $hull add [set lf [ttk::labelframe $win.v[incr i] -text Input]]
+        pack [set sw [widget::scrolledwindow $lf.sw]] -fill both -expand yes
+        install myListener using ctext_tcl $sw.ctext -linemap 0 -undo yes -autoseparator yes -height 3
         $sw setwidget $myListener
-        
+        pack [set status [ttk::frame $lf.status]] -fill x -expand no
+        pack [ttk::label $status.label -textvariable [myvar myListenerStatus]] -fill x -expand yes -side left
+        pack [ttk::label [set w $status.l[incr i]] -text "#"] -fill none -expand no -side left
+        pack [ttk::label $status.l[incr i] -textvariable [myvar myHistIdx]] -fill none -expand no -side left
+        $status configure -height [winfo reqheight $w]
+
         bindtags $myListener.t [list $myListener $myListener.t $ourTextBindings . all]
         bind $myListener <Control-Return> "$self Submit; break"
-        bind $myListener <Control-p> "$self prev-or-openhist; break"
+        bind $myListener <Control-p> "$self up-line-or-history; break"
+        bind $myListener <Control-n> "$self down-line-or-history; break"
+
+        #----------------------------------------
+        # default result log
+        $hull add [set lf [ttk::labelframe $win.v[incr i] -text Result]]
+        pack [set sw [widget::scrolledwindow $lf.sw]] -fill both -expand yes
+        install myResultView using rotext $sw.result -height 10
+        $sw setwidget $myResultView
+        $myResultView tag configure separator -borderwidth 2 -relief sunken
     }
-    
-    method prev-or-openhist {} {
-        scan [$myListener index insert] %d.%d line char
-        if {$line == 1} {
-            $self openhist end
-            $self hist-insert active
+
+    method up-line-or-history {} {
+        if {[$myListener compare "insert linestart" == 1.0]} {
+            $self history replace-by $myHistIdx -1 end
         } else {
             tk::TextSetCursor $myListener.t [tk::TextUpDownLine $myListener.t -1]
         }
     }
 
-    method hist-insert index {
-        set loggedScript [$myHistView get $index]
-        # XXX: modified なら…
-        $myListener delete 1.0 end
-        $myListener edit reset
-        $myListener insert end [regsub {^[\d:]+ } $loggedScript {}]
+    method down-line-or-history {} {
+        if {[$myListener compare insert == end-1c]} {
+            $self history replace-by $myHistIdx +1 "1.0 lineend"
+        } else {
+            tk::TextSetCursor $myListener.t [tk::TextUpDownLine $myListener.t 1]
+        }
     }
 
-    method openhist {{index ""}} {
-        if {$index eq ""} {
-            if {![winfo ismapped $myHistView]} {
-                $hull insert 0 [winfo parent $myHistView]
-            }
-        } else {
-            focus $myHistView
-            $myHistView activate $index
-            $myHistView selection set $index
-        }
+    method {history replace-by} {histIx offset cursorIx} {
+        if {$histIx eq ""} return
+        if {$offset < 0 && $histIx <= 0} return
+        if {$offset > 0 && [$myStore histno max] <= $histIx} return
+        incr histIx $offset
+        set text [$myStore get $ourHistKind(command) $histIx]
+        $myListener delete 1.0 end
+        $myListener edit reset
+        $myListener insert end $text
+        $myListener mark set insert $cursorIx
+        set myHistIdx $histIx
     }
 
     method Submit {} {
         set script [$myListener get 1.0 end-1c]
-        if {$options(-command) ne ""} {
+        set result [if {$options(-command) ne ""} {
             {*}$options(-command) $script
         } else {
-            puts [list submit $script]
-        }
-        $self history add command $script
-        $self openhist
-        $myHistView insert end "[clock format [clock seconds] -format {%H:%M:%S}] $script"
-        $myHistView see end
-        $myListener delete 1.0 end
+            uplevel #0 $script
+        }]
+        $self result append $result
+        set myHistIdx [$self history add $ourHistKind(command) $script]
+    }
+
+    method {result append} result {
+        $myResultView insert end "\n" "" "\n" separator
+        $myResultView see insert
+        $myResultView insert end $result result
     }
 
     typeconstructor {
@@ -118,16 +137,26 @@ snit::widgetadaptor cmdlistener {
 snit::type cmdlistener::store-sqlite {
     option -store-filename sysopcon.db3
     option -store-dir ""
-    
+
     option -debug yes
 
     component myDB
+    method get {kind rowid} {
+        # XXX: $kind is useless this time.
+        $self DB onecolumn {
+            select script from history where kind = $kind and rowid = $rowid
+        }
+    }
     method add {kind script} {
         set at [clock seconds]
         $self DB eval {
             insert into history(at, kind, script)
             values($at, $kind, $script)
         }
+        $self DB last_insert_rowid
+    }
+    method {histno max} {} {
+        $self DB eval {select max(rowid) from history}
     }
     method DB args {
         if {$myDB eq ""} {
@@ -166,6 +195,6 @@ snit::type cmdlistener::store-sqlite {
 
 if {![info level] && [info script] eq $::argv0} {
     
-    pack [cmdlistener .win]
+    pack [cmdlistener .win] -fill both -expand yes
 
 }
